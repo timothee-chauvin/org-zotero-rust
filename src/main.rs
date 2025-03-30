@@ -342,24 +342,35 @@ fn edit_file(
     filename: &str,
     _parent: &Paper,
     highlight_content: &str,
-) -> Result<(), std::io::Error> {
+) -> Result<bool, std::io::Error> {
     let content = fs::read_to_string(filename)?;
     let lines: Vec<&str> = content.lines().collect();
 
     let highlight_marker = "* zotero:highlights";
-    let highlight_index = lines
+
+    let highlight_start_index = lines
         .iter()
         .position(|line| line.trim() == highlight_marker)
         .unwrap_or(lines.len());
 
-    let mut new_content = lines[..highlight_index].join("\n");
+    let existing_highlight_section = lines[highlight_start_index..].join("\n");
 
-    if !new_content.is_empty() || !highlight_content.is_empty() {
+    if existing_highlight_section.trim() == highlight_content.trim() {
+        return Ok(false);
+    }
+
+    let new_content_lines = lines[..highlight_start_index].to_vec();
+
+    let mut new_content = new_content_lines.join("\n");
+
+    if !new_content_lines.is_empty() {
         new_content.push('\n');
     }
+
     new_content.push_str(highlight_content);
 
-    fs::write(filename, new_content)
+    fs::write(filename, new_content)?;
+    Ok(true)
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -442,10 +453,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         if let Some(filename) = existing_refs.get(&paper.roam_ref) {
             match edit_file(filename, paper, &highlight_content_str) {
-                Ok(_) => {
+                Ok(true) => {
                     println!("Edited file: {}", filename);
                     files_edited += 1;
                 }
+                Ok(false) => {}
                 Err(e) => eprintln!("Error editing file {}: {}", filename, e),
             }
         } else {
