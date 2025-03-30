@@ -598,7 +598,6 @@ dependencies = [
  "once_cell",
  "rusqlite",
  "serde",
- "serde_json",
  "slug",
  "tera",
  "uuid",
