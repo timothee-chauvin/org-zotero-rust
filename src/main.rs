@@ -322,7 +322,7 @@ fn generate_file_content(
     }
     context.insert("zotero_url", &document.zotero_url);
     context.insert("title", &document.title);
-    context.insert("author", &document.author);
+    context.insert("authors", &document.author);
     context.insert(
         "saved_at",
         &document.saved_at.format("%Y-%m-%d").to_string(),
