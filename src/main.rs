@@ -5,6 +5,7 @@ use rusqlite::{Connection, Result, Row};
 use serde::Serialize;
 use settings::SETTINGS;
 use std::collections::HashMap;
+use std::env;
 use std::fs;
 use std::path::Path;
 use std::process::Command;
@@ -372,7 +373,42 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Err(format!("Org roam directory not found: {}", org_roam_dir.display()).into());
     }
 
-    let conn = Connection::open(&SETTINGS.zotero_db_path)?;
+    let original_db_path = Path::new(&SETTINGS.zotero_db_path);
+    let temp_dir = env::temp_dir();
+    let temp_filename = format!("zotero_db_copy_{}.sqlite", Uuid::new_v4());
+    let temp_db_path = temp_dir.join(&temp_filename);
+
+    println!(
+        "Copying Zotero database to temporary location: {}",
+        temp_db_path.display()
+    );
+    match fs::copy(original_db_path, &temp_db_path) {
+        Ok(_) => println!(
+            "Database copied successfully to: {}",
+            temp_db_path.display()
+        ),
+        Err(e) => {
+            eprintln!(
+                "Failed to copy Zotero database from {} to {}: {}",
+                original_db_path.display(),
+                temp_db_path.display(),
+                e
+            );
+            let _ = fs::remove_file(&temp_db_path);
+            return Err(Box::new(e));
+        }
+    }
+
+    let conn = match Connection::open_with_flags(
+        &temp_db_path,
+        rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY,
+    ) {
+        Ok(c) => c,
+        Err(e) => {
+            let _ = fs::remove_file(&temp_db_path);
+            return Err(Box::new(e));
+        }
+    };
 
     println!("Scanning {:?} for existing refs...", org_roam_dir);
     let existing_refs = get_existing_refs(org_roam_dir)?;
@@ -445,6 +481,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Files edited: {}", files_edited);
     let duration = start_time.elapsed();
     println!("Total time taken: {:?}", duration);
+
+    match fs::remove_file(&temp_db_path) {
+        Ok(_) => println!("Cleaned up temporary database: {}", temp_db_path.display()),
+        Err(e) => eprintln!(
+            "Warning: Failed to clean up temporary database {}: {}",
+            temp_db_path.display(),
+            e
+        ),
+    }
 
     Ok(())
 }
