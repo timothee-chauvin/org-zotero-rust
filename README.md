@@ -1,4 +1,4 @@
-# org-readwise-rust
+# org-zotero-rust
 
 Like [org-readwise-rust](https://github.com/timothee-chauvin/org-readwise-rust), but for [Zotero](https://www.zotero.org/).
 
