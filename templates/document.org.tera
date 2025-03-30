@@ -1,0 +1,19 @@
+:PROPERTIES:
+:ID: {{ uuid }}
+:ROAM_REFS: {{ roam_ref }}
+:END:
+#+TITLE: {{ title }}
+
+- author: {{ authors }}
+- added: <{{ saved_at }}>
+{%- if full_url %}
+- link: {{ full_url }}
+{%- endif %}
+- zotero link: {{ zotero_url }}
+{%- if published_date %}
+- date: {{ published_date }}
+{%- endif %}
+
+- tags:
+
+{{ highlight_content | trim_end }}

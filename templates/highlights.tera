@@ -1,0 +1,11 @@
+{% if highlights -%}
+* zotero:highlights
+{%- for highlight in highlights %}
+** zotero:{{ highlight.id }}
+{{ highlight.content | trim }}
+{%- if highlight.note %}
+*** note ({{ highlight.note_saved_at }})
+{{ highlight.note | trim }}
+{%- endif %}
+{%- endfor %}
+{%- endif %}
